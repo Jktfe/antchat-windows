@@ -1,0 +1,24 @@
+[package]
+name = "ant-chat-desktop"
+version = "0.1.0"
+description = "ANT Chat — native macOS client for ANT v4"
+authors = ["New Model Venture Capital"]
+edition = "2021"
+
+[lib]
+name = "ant_chat_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-opener = "2"
+tauri-plugin-deep-link = "2"
+tauri-plugin-positioner = { version = "2", features = ["tray-icon"] }
+tauri-plugin-window-state = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-global-shortcut = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
