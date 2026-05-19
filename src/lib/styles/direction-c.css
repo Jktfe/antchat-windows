@@ -1,0 +1,112 @@
+/* Direction C v3.3 — JWPK-locked visual identity for ANT v4 + antchat surfaces.
+ *
+ * Source: project_direction_c_v3_3_jwpk_locked_2026_05_18.md (banked memory).
+ * "Content-First Studio + Inter 850/900 + web-palette validated as visual
+ *  north star for M1/M2/M3/antios. No more direction-exploration; only
+ *  fidelity checks against v3.3."
+ *
+ * Lift from v4 web frontend tokens — same CSS variable names so component
+ * lifts from src/routes/rooms/[roomId]/+page.svelte etc. work unchanged.
+ */
+
+:root {
+  /* ─── Palette ───────────────────────────────────────────── */
+  --bg: #F7F5EF;              /* warm cream — main app background */
+  --panel: #FFFFFF;            /* white — cards, panels, composer */
+  --surface: #FFFFFF;          /* alias for component code */
+  --surface-edge: #E8E4D9;     /* hairline border on panels */
+  --ink: #0A1022;              /* near-black text */
+  --ink-strong: #0A1022;       /* strong/heading text */
+  --ink-soft: #5C6275;         /* muted/secondary text */
+  --line-soft: #E8E4D9;        /* subtle dividers */
+  --accent: #FF3D5A;           /* red — primary CTAs, links, focus rings */
+  --accent-soft: #FFEAEE;      /* tinted-red fills (alert backgrounds) */
+  --warn: #B86E00;             /* amber for warnings */
+  --ok: #2C7A4B;               /* green for success states */
+
+  /* ─── Typography ────────────────────────────────────────── */
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+
+  /* Inter weights — 500 body, 600 emphasised body, 700 mono headers,
+     850 display, 900 hero display (JWPK locked). */
+  --weight-body: 500;
+  --weight-body-strong: 600;
+  --weight-mono-header: 700;
+  --weight-display: 850;
+  --weight-hero: 900;
+
+  /* ─── Spacing scale ─────────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  /* ─── Radius ────────────────────────────────────────────── */
+  --radius-sm: 0.4rem;
+  --radius-md: 0.65rem;
+  --radius-lg: 1rem;
+  --radius-pill: 9999px;
+
+  /* ─── Elevation ─────────────────────────────────────────── */
+  --shadow-soft: 0 1px 2px rgba(10, 16, 34, 0.04), 0 2px 8px rgba(10, 16, 34, 0.04);
+  --shadow-card: 0 4px 12px rgba(10, 16, 34, 0.06);
+
+  /* ─── Motion ────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+}
+
+/* Dark mode mirror — JWPK msg-banked feedback `ant_dark_mode_binding_2026_05_14`
+ * requires natives hit the dark-mode acceptance bar. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0E1116;
+    --panel: #1A1E27;
+    --surface: #1A1E27;
+    --surface-edge: #2A3040;
+    --ink: #F2F0E9;
+    --ink-strong: #FFFFFF;
+    --ink-soft: #A0A6B8;
+    --line-soft: #2A3040;
+    /* accent stays #FF3D5A — JWPK red holds across themes */
+    --accent-soft: rgba(255, 61, 90, 0.12);
+  }
+}
+
+/* Base reset to apply tokens immediately */
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  color: var(--ink-strong);
+  letter-spacing: -0.01em;
+}
+
+h1.hero {
+  font-weight: var(--weight-hero);
+  letter-spacing: -0.02em;
+}
+
+button {
+  font-family: var(--font-body);
+  font-weight: var(--weight-body-strong);
+}
+
+code, pre {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-mono-header);
+}

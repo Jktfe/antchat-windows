@@ -16,6 +16,9 @@
    * so a new user can discover the shortcut set without scanning the menu
    * bar. Escape (or clicking the scrim) closes it.
    */
+
+  // Direction C v3.3 design tokens (palette + typography + spacing)
+  import "$lib/styles/direction-c.css";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
