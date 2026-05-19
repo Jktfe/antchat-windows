@@ -1,0 +1,122 @@
+# Scoop Bump — fires on successful Release Windows completion, downloads the
+# released .exe, verifies SHA256 ground-truth (not workflow-claimed), clones
+# Jktfe/scoop-antchat, patches bucket/antchat-app.json with new version+url+hash,
+# pushes a branch, opens a PR against the bucket repo's main.
+#
+# Mirror of Jktfe/antchat's .github/workflows/cask-bump.yml (Mac side).
+#
+# Required secret: HOMEBREW_TAP_GITHUB_TOKEN — fine-grained PAT scoped to
+# Jktfe/scoop-antchat with Contents:write + Pull requests:write.
+# (Same secret name reused — works because it grants cross-repo write to a
+# distribution bucket; semantically the same role for both brew + scoop.)
+
+name: Scoop Bump
+on:
+  workflow_run:
+    workflows: ['Release Windows']
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  bump:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # The triggering workflow_run gives us head_branch; for tag pushes that's the tag name.
+          HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+          if [[ "$HEAD_BRANCH" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            TAG="$HEAD_BRANCH"
+          else
+            # Fallback: find latest release tag
+            TAG=$(gh api repos/${{ github.repository }}/releases/latest --jq .tag_name)
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Resolve + verify NSIS .exe asset
+        id: asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.tag.outputs.tag }}"
+          # Find the .exe asset on the release
+          URL=$(gh api repos/${{ github.repository }}/releases/tags/$TAG \
+            --jq '.assets[] | select(.name | endswith(".exe")) | .browser_download_url' \
+            | head -1)
+          NAME=$(basename "$URL")
+          echo "Downloading $URL"
+          curl -sSL -o "$NAME" "$URL"
+          # GROUND-TRUTH SHA256 — re-hash the downloaded asset, never trust workflow output
+          HASH=$(sha256sum "$NAME" | awk '{print $1}')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "sha256=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Checkout scoop bucket
+        uses: actions/checkout@v4
+        with:
+          repository: Jktfe/scoop-antchat
+          token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          path: scoop-antchat
+
+      - name: Patch manifest
+        run: |
+          set -euo pipefail
+          cd scoop-antchat
+          MANIFEST=bucket/antchat-app.json
+          if [ ! -f "$MANIFEST" ]; then
+            cat > "$MANIFEST" <<JSON
+          {
+            "version": "${{ steps.tag.outputs.version }}",
+            "description": "Native Windows antchat — Tauri 2 + Svelte 5",
+            "homepage": "https://github.com/Jktfe/antchat-windows",
+            "license": "MIT",
+            "url": "${{ steps.asset.outputs.url }}",
+            "hash": "${{ steps.asset.outputs.sha256 }}",
+            "bin": "Antchat.exe",
+            "shortcuts": [["Antchat.exe", "Antchat"]],
+            "checkver": {
+              "github": "https://github.com/Jktfe/antchat-windows"
+            },
+            "autoupdate": {
+              "url": "https://github.com/Jktfe/antchat-windows/releases/download/v\$version/Antchat_\$version_x64-setup.exe"
+            }
+          }
+          JSON
+          else
+            # Use jq to patch existing manifest
+            jq --arg v "${{ steps.tag.outputs.version }}" \
+               --arg u "${{ steps.asset.outputs.url }}" \
+               --arg h "${{ steps.asset.outputs.sha256 }}" \
+               '.version = $v | .url = $u | .hash = $h' \
+               "$MANIFEST" > "$MANIFEST.tmp" && mv "$MANIFEST.tmp" "$MANIFEST"
+          fi
+
+      - name: Open PR
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd scoop-antchat
+          BRANCH="bump-antchat-app-${{ steps.tag.outputs.version }}"
+          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git checkout -b "$BRANCH"
+          git add bucket/antchat-app.json
+          git commit -m "antchat-app ${{ steps.tag.outputs.version }}"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "antchat-app ${{ steps.tag.outputs.version }}" \
+            --body "Auto-bumped by Jktfe/antchat-windows release-dmg → scoop-bump workflow. SHA256 verified ground-truth from re-downloaded asset (not workflow-claimed)." \
+            --base main \
+            --head "$BRANCH"

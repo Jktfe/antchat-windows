@@ -1,0 +1,95 @@
+# Release Windows — builds an unsigned Tauri .exe for the Scoop-distributed
+# native Windows antchat app, publishes to GitHub Releases.
+#
+# Per JWPK msg_mtpqhnd0bx: no Authenticode cert. SmartScreen warning on direct
+# launch is acceptable; users installing via `scoop install antchat-app` bypass
+# SmartScreen because Scoop runs the install in its own context.
+#
+# Trigger: tag push `v*.*.*` OR manual workflow_dispatch with version input.
+# Output: GitHub Release tagged `v<version>` with the .exe + .nsis.zip + checksum.
+#
+# Downstream: `.github/workflows/scoop-bump.yml` fires on successful completion
+# and opens a PR against Jktfe/scoop-antchat with the bumped manifest.
+
+name: Release Windows
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semver tag without v-prefix (e.g. 0.1.0)'
+        required: true
+
+permissions:
+  contents: write  # to create GitHub Release + upload assets
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            TAG="${GITHUB_REF##refs/tags/}"
+            echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+            echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build Tauri (unsigned)
+        uses: tauri-apps/tauri-action@v0
+        with:
+          tagName: ${{ steps.ver.outputs.tag }}
+          releaseName: 'Antchat Windows ${{ steps.ver.outputs.version }}'
+          releaseBody: |
+            Native Windows antchat — Tauri 2 + Svelte 5.
+
+            Install via Scoop:
+            ```
+            scoop bucket add antchat https://github.com/Jktfe/scoop-antchat
+            scoop install antchat-app
+            ```
+
+            **Unsigned**: direct `.exe` launch triggers SmartScreen "Unrecognized app"; Scoop install bypasses.
+          releaseDraft: false
+          prerelease: false
+          args: '--bundles nsis'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute SHA256 of the NSIS installer
+        id: hash
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
+          if (-not $exe) { throw "No NSIS .exe found" }
+          $hash = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLower()
+          "sha256=$hash" >> $env:GITHUB_OUTPUT
+          "filename=$($exe.Name)" >> $env:GITHUB_OUTPUT
+
+      - name: Step summary
+        shell: pwsh
+        run: |
+          "## Antchat Windows ${{ steps.ver.outputs.tag }}" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "- File: ``${{ steps.hash.outputs.filename }}``" >> $env:GITHUB_STEP_SUMMARY
+          "- SHA256: ``${{ steps.hash.outputs.sha256 }}``" >> $env:GITHUB_STEP_SUMMARY
