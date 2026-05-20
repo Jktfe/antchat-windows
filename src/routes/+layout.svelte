@@ -33,6 +33,19 @@
   let cheatsheetOpen = $state(false);
   let paletteOpen = $state(false);
 
+  // wta-03 auth bootstrap — verify stored token on mount; redirect to /login if invalid
+  // or absent. Skipped while page.route.id is already /login to avoid bounce loop.
+  let authBootstrapped = $state(false);
+  $effect(() => {
+    if (authBootstrapped) return;
+    if (page.route.id === "/login") { authBootstrapped = true; return; }
+    void (async () => {
+      const ok = await auth.verify();
+      authBootstrapped = true;
+      if (!ok) void goto("/login");
+    })();
+  });
+
   // Proactively prompt for the macOS notification permission the first time
   // the app launches with an authenticated session. Without this the very
   // first new-message banner triggers the system prompt, which means the

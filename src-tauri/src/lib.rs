@@ -21,6 +21,73 @@ fn app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
+/// wta-11: MCP-X — drop antchat MCP server config into Claude Desktop's
+/// config file on Windows (%APPDATA%\Claude\claude_desktop_config.json) so
+/// Claude Desktop can post into ANT rooms as the user's agent.
+///
+/// Non-destructive merge: reads existing config (or `{}`) and adds/updates
+/// the `antchat` entry under `mcpServers`. Other servers preserved verbatim.
+///
+/// Returns the absolute path to the config file written, or an error string.
+#[tauri::command]
+fn mcp_install_claude_desktop_config() -> Result<String, String> {
+    use std::env;
+    use std::fs;
+    use std::path::PathBuf;
+
+    // %APPDATA%\Claude\claude_desktop_config.json on Windows.
+    // Falls back to ~/.config/Claude/ for cross-platform dev runs.
+    let config_dir: PathBuf = if let Some(appdata) = env::var_os("APPDATA") {
+        PathBuf::from(appdata).join("Claude")
+    } else if let Some(home) = env::var_os("HOME") {
+        PathBuf::from(home).join(".config").join("Claude")
+    } else {
+        return Err("could not determine Claude config dir (no APPDATA or HOME)".to_string());
+    };
+    fs::create_dir_all(&config_dir).map_err(|e| format!("mkdir: {e}"))?;
+    let config_path = config_dir.join("claude_desktop_config.json");
+
+    // Read existing config or start fresh.
+    let existing = if config_path.exists() {
+        let raw = fs::read_to_string(&config_path).map_err(|e| format!("read: {e}"))?;
+        serde_json::from_str::<serde_json::Value>(&raw).unwrap_or(serde_json::json!({}))
+    } else {
+        serde_json::json!({})
+    };
+
+    let mut config = match existing {
+        serde_json::Value::Object(m) => m,
+        _ => serde_json::Map::new(),
+    };
+
+    let mut mcp_servers = config
+        .get("mcpServers")
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
+
+    // Inject (or overwrite) the antchat entry. Uses npx so users don't
+    // need to globally install @jktfe/mcp-server-ant; one less moving part.
+    let antchat_entry = serde_json::json!({
+        "command": "npx",
+        "args": ["-y", "@jktfe/mcp-server-ant"],
+        "env": {
+            "ANT_SERVER_URL": "http://localhost:6174"
+        }
+    });
+    mcp_servers.insert("antchat".to_string(), antchat_entry);
+
+    config.insert(
+        "mcpServers".to_string(),
+        serde_json::Value::Object(mcp_servers),
+    );
+
+    let pretty = serde_json::to_string_pretty(&serde_json::Value::Object(config))
+        .map_err(|e| format!("serialize: {e}"))?;
+    fs::write(&config_path, pretty).map_err(|e| format!("write: {e}"))?;
+
+    Ok(config_path.to_string_lossy().into_owned())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -241,7 +308,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![app_version])
+        .invoke_handler(tauri::generate_handler![app_version, mcp_install_claude_desktop_config])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
