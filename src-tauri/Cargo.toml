@@ -1,6 +1,6 @@
 [package]
 name = "ant-chat-desktop"
-version = "0.1.0"
+version = "0.1.1"
 description = "ANT Chat — native macOS client for ANT v4"
 authors = ["New Model Venture Capital"]
 edition = "2021"

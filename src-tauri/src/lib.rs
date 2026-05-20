@@ -11,7 +11,7 @@
 use tauri::{
     menu::{Menu, MenuBuilder, MenuItem, PredefinedMenuItem, SubmenuBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Emitter, Manager,
+    Emitter, LogicalSize, Manager,
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_positioner::{Position, WindowExt};
@@ -213,6 +213,7 @@ pub fn run() {
                 .item(&help_submenu)
                 .build()?;
             app.set_menu(app_menu)?;
+            repair_bad_window_state(app_handle);
 
             // Forward menu events to the frontend as `nav` / `action` events.
             app.on_menu_event(|app, event| {
@@ -315,6 +316,25 @@ pub fn run() {
 
 fn focus_main<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+fn repair_bad_window_state<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+
+    let size = window.inner_size().ok();
+    let has_bad_size = size
+        .map(|s| s.width < 480 || s.height < 320)
+        .unwrap_or(false);
+    let is_visible = window.is_visible().unwrap_or(false);
+
+    if has_bad_size || !is_visible {
+        let _ = window.set_size(LogicalSize::new(1100.0, 720.0));
+        let _ = window.center();
         let _ = window.show();
         let _ = window.set_focus();
     }
