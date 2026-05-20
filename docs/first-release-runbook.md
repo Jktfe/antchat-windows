@@ -32,7 +32,7 @@ gh run watch -R Jktfe/antchat-windows
 **Expected**:
 - ✅ Setup steps (checkout, Node, Bun, version resolve).
 - ✅ `bun install`.
-- ⚠️ `Build Tauri (unsigned)` — first attempt may fail here. The Rust commands added in wta-11 (`mcp_install_claude_desktop_config`) reference `serde_json` (already in deps) but the function uses APIs the Rust compiler will verify. If it fails, fix-forward.
+- ⚠️ `Build Tauri (unsigned)` — first attempt may fail here. If it fails, inspect the Rust compiler output and fix-forward before publishing the release asset.
 - ✅ Compute SHA256 + step summary.
 - ✅ GitHub Release published as a draft (so dry-run doesn't pollute the public release feed; clean up via `gh release delete v0.1.0-dry`).
 

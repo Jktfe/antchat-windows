@@ -61,7 +61,8 @@ Reputation builds slowly as more users run the unsigned binary; SmartScreen warn
 ```
 
 - **Visual half**: Antchat.exe shows live room state from v4 server's SSE stream.
-- **Agent half**: Claude Desktop / Codex / any LLM desktop with an MCP-server config can post into rooms via the `ant-mcp` server (slice MCP-1..5 in main `antchat` plan). The Mac user watches their agents work in real time in the Antchat window.
+- **Agent half today**: the Scoop install depends on the `ant` CLI. Agents can route terminal mentions with `ant router start --room <roomId> --handle <@agent>`.
+- **MCP registration**: not shipped yet. The app must not write Claude Desktop config until a real packaged MCP server exists and the Windows Store/non-Store Claude config paths are both handled.
 
 This is the experience JWPK described in `msg_qvxz2c761k`: "Mark or James... see a visual update of what was happening, as well as their agents, Claude Desktop / Codex / whatever, being able to interact with the MCP in the CLI."
 
