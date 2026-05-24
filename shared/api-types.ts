@@ -69,7 +69,13 @@ export interface RoomMember {
 export interface ChatRoom {
   id: string;
   name: string;
+  /** Server auto-derives from latest message body — read-only preview. */
   summary: string;
+  /** User/agent-authored optional description (a-nice-terminal a19a496
+   *  2026-05-24). Distinct from `summary`: the human-set "what is this
+   *  room for" line that survives chat churn. UI should prefer this
+   *  when set and fall back to `summary` when null. */
+  description?: string | null;
   attentionState: RoomAttentionState;
   lastUpdate: string;
   whenItWasCreated: string;

@@ -213,7 +213,15 @@
                 {/each}
               </div>
             {/if}
-            {#if room.summary}
+            {#if room.description}
+              <!-- User/agent-authored description (server a19a496
+                   2026-05-24) takes precedence over the auto-derived
+                   summary preview when set. Matches RoomStrip on
+                   a-nice-terminal (cb65df5). -->
+              <div class="room-preview">
+                <span class="preview-body">{room.description}</span>
+              </div>
+            {:else if room.summary}
               {@const parts = parseSummary(room.summary)}
               {@const senderColor = previewSenderColor(room.members, parts.handle)}
               <div class="room-preview">
