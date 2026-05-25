@@ -16,7 +16,7 @@ const config = {
       // Cross-platform contract types live in the repo-level shared/ directory.
       // Both ios/ (Swift) and macos/ (this app) mirror these shapes; kimi
       // gatekeeps changes via PR review.
-      $shared: "../shared",
+      $shared: "./shared",
     },
   },
 };

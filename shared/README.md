@@ -20,6 +20,7 @@ ANT native app clients (iOS + macOS Tauri).
 ## Type Coverage
 
 - `Tier` + `CapabilityResponse` — `/api/capabilities`
+- `BringInTarget` + `RoomContextPayload` + `BringInAppResponse` — `/api/chat-rooms/:roomId/bring-in-app`
 - `ChatRoom` + `RoomMember` — `/api/chat-rooms`
 - `ChatMessage` + `ChatMessageKind` — `/api/chat-rooms/:id/messages`
 - `SharedFile` + `SharedFileMetadata` — `/api/chat-rooms/:id/attachments`

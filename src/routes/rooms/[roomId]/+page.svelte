@@ -6,13 +6,18 @@
   import { roomsStore } from "$lib/stores/rooms.svelte";
   import { roomActivity } from "$lib/stores/roomActivity.svelte";
   import { messagesStore } from "$lib/stores/messages.svelte";
+  import { capabilities } from "$lib/stores/capabilities.svelte";
   import MessageRow from "$lib/components/MessageRow.svelte";
   import ChatComposer from "$lib/components/ChatComposer.svelte";
+  import BringInAppRow from "$lib/components/BringInAppRow.svelte";
   import { relativeTime } from "$lib/time";
   import { notifyIfBackgrounded } from "$lib/notify";
 
   const roomId = $derived(page.params.roomId);
   const room = $derived(roomsStore.rooms.find((r) => r.id === roomId));
+  const bringInAppAvailable = $derived(
+    capabilities.data?.featureFlags?.bring_in_app_ux === true,
+  );
   // Per-room participant identity lookup (Fix 5) — feeds MessageRow's
   // accent colour and background style for each sender.
   const memberByHandle = $derived(
@@ -28,6 +33,7 @@
   let lastSeenPostOrder = $state(-1);
 
   onMount(() => {
+    void capabilities.load();
     if (auth.isAuthenticated) {
       void roomsStore.load(auth.token);
       if (roomId) {
@@ -192,6 +198,14 @@
       </div>
       <span class="count">{messagesStore.messages.length} messages · {room?.members.length ?? 0} members</span>
     </header>
+
+    {#if roomId && auth.isAuthenticated}
+      <BringInAppRow
+        {roomId}
+        token={auth.token}
+        available={bringInAppAvailable}
+      />
+    {/if}
 
     <div class="messages" bind:this={messagesEl} onscroll={onScroll}>
       {#if messagesStore.status === "loading"}
