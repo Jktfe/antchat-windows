@@ -44,6 +44,33 @@ export interface CapabilityResponse {
 }
 
 // ============================================================================
+// Bring in App
+// ============================================================================
+
+export type BringInTarget =
+  | 'claude-desktop'
+  | 'claude-mobile'
+  | 'chatgpt'
+  | 'codex-desktop'
+  | 'gemini';
+
+export interface RoomContextPayload {
+  roomId: string;
+  roomName: string;
+  roomDescription: string | null;
+  recentMessagesMarkdown: string;
+  openAsksMarkdown: string | null;
+  generatedAtMs: number;
+}
+
+export interface BringInAppResponse {
+  launchId: string;
+  target: BringInTarget;
+  launchedAtMs: number;
+  payload: RoomContextPayload;
+}
+
+// ============================================================================
 // Room
 // ============================================================================
 

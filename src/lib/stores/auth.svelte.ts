@@ -92,6 +92,24 @@ class AuthStore {
     }
   }
 
+  /** Token-only room links still exist in the Windows client. Keep that
+   * path usable until the full login flow replaces it everywhere. */
+  setToken(token: string): void {
+    this.persistToken(token);
+  }
+
+  /** Pair token-only room links with a local display handle so the existing
+   * `isAuthenticated` guard and message composer can proceed. */
+  setHandle(handle: string): void {
+    const normalized = handle.trim() || "@you";
+    this.persistUser({
+      id: normalized,
+      email: "",
+      displayName: normalized,
+      handle: normalized,
+    });
+  }
+
   private persistToken(token: string): void {
     this.token = token;
     if (browser) localStorage.setItem(TOKEN_KEY, token);
