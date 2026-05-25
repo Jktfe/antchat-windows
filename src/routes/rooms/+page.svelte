@@ -115,6 +115,11 @@
     return roomsStore.rooms.filter((r) => {
       if (r.name.toLowerCase().includes(q)) return true;
       if (r.summary && r.summary.toLowerCase().includes(q)) return true;
+      // Per gemini-code-assist PR #1 finding: description was shown
+      // in the row body but missing from the filter, so users could
+      // see it but not search by it. Including it here closes that
+      // discrepancy.
+      if (r.description && r.description.toLowerCase().includes(q)) return true;
       return r.members.some((m) => m.handle.toLowerCase().includes(q));
     });
   });
@@ -180,7 +185,7 @@
       <input
         type="search"
         bind:value={filterQuery}
-        placeholder="Filter rooms by name, summary, or member…"
+        placeholder="Filter rooms by name, summary, description, or member…"
         aria-label="Filter rooms"
       />
       {#if filterQuery && filteredRooms.length !== roomsStore.rooms.length}
