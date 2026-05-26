@@ -1,6 +1,6 @@
 {
   "name": "ant-chat-desktop",
-  "version": "0.1.2",
+  "version": "4.0.0",
   "description": "ANT Chat — native macOS client for ANT v4",
   "type": "module",
   "scripts": {
